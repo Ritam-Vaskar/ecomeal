@@ -85,12 +85,30 @@ export default function InventoryPage() {
     await loadInventory();
   }
 
+  function requestBackgroundSync() {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        if ('sync' in registration) {
+          return registration.sync.register('ecomeal-sync');
+        }
+        return undefined;
+      })
+      .catch(() => undefined);
+  }
+
   useEffect(() => {
     loadInventory();
   }, []);
 
   useEffect(() => {
     syncQueue();
+  }, [online]);
+
+  useEffect(() => {
+    const handler = () => syncQueue();
+    window.addEventListener('ecomeal:sync', handler);
+    return () => window.removeEventListener('ecomeal:sync', handler);
   }, [online]);
 
   useEffect(() => {
@@ -131,6 +149,7 @@ export default function InventoryPage() {
         method: 'POST',
         body: payload,
       });
+      requestBackgroundSync();
       return;
     }
 
@@ -144,6 +163,7 @@ export default function InventoryPage() {
         method: 'POST',
         body: payload,
       });
+      requestBackgroundSync();
     }
   }
 
