@@ -2,66 +2,76 @@
 
 AI-powered restaurant inventory and kitchen intelligence platform.
 
-## Phase Plan
-1. Foundation: monorepo scaffolding, core UI shell, API skeleton, env setup.
-2. Data layer: MongoDB schema, inventory CRUD, pagination, indexing.
-3. Auth: JWT + refresh tokens, role-based access, protected routes.
-4. Offline-first: IndexedDB queue, sync worker, conflict resolution.
-5. Real-time: Socket.IO updates, low-stock and expiry alerts.
-6. AI engine: Gemini + Grok integration with fallback and caching.
-7. Analytics: dashboards with trends and efficiency metrics.
-8. Resilience: retry queues, circuit breakers, failure handling.
-9. Performance: virtualization, query tuning, bundle reduction.
+## Current Architecture
+- Frontend: Next.js (App Router) + TypeScript + Tailwind CSS + PWA shell.
+- Backend: Express + TypeScript with modular routes.
+- Database: MongoDB Atlas with indexed inventory schema and pagination.
+- Realtime: Socket.IO for inventory updates.
+- Offline-first: Local queue + service worker background sync.
+- Queue handling: In-memory retry manager for AI jobs (upgradeable to Redis).
 
-## Architecture Decisions
-- Frontend: Next.js (App Router), TypeScript, Tailwind CSS, PWA.
-- Backend: Express + TypeScript with modular route structure.
-- Database: MongoDB Atlas with indexes and pagination.
-- Realtime: Socket.IO.
-- Offline: IndexedDB + service worker background sync.
-- Queues: BullMQ with Redis for retries and burst handling.
+## Features Implemented
+- Auth: JWT + refresh tokens + role-based access.
+- Inventory: pagination, search, filters, offline queue, realtime updates.
+- AI: queue-backed retries + job polling.
+- Analytics: live dashboard pulling metrics from API.
+- Failure handling: rate limiting, timeouts, request IDs, retries on GET.
 
-## Frontend Structure
-- App routes grouped by auth and dashboard.
-- Shared UI components and hooks.
-- Offline queue + sync utilities.
-
-## Backend Architecture
-- Feature modules for auth, inventory, analytics, AI, realtime, queues.
-- Central error handler and validation with Zod.
-
-## Database Design
-- Inventory items with supplier, expiry, and stock metadata.
-- Indexes on expiry date, category, and low-stock thresholds.
+## Backend Endpoints
+- `POST /auth/signup`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `GET /auth/me`
+- `GET /inventory`
+- `POST /inventory`
+- `POST /ai/recommendations`
+- `GET /ai/jobs/:id`
+- `GET /analytics`
+- `GET /health`
 
 ## Offline Sync Strategy
-- Queue write operations in IndexedDB.
-- Sync on reconnect with conflict resolution and retries.
+- Inventory writes are queued in local storage when offline.
+- Service worker registers background sync and signals the UI to flush.
+- Queue flush retries are capped and safe.
 
 ## Queue Handling Strategy
-- BullMQ for background jobs and retry logic.
-- Dead-letter queue for persistent failures.
+- AI requests can simulate unstable upstream responses.
+- Failed requests enqueue jobs with backoff and retry tracking.
+- Jobs can be polled via `/ai/jobs/:id`.
 
-## AI Integration Logic
-- Gemini primary, Grok secondary fallback.
-- Prompt templates based on expiring ingredients.
-
-## Performance Optimizations
-- List virtualization for large inventories.
-- Server-side pagination and indexed queries.
-- Memoized UI components and minimal re-renders.
+## Performance Notes
+- Memoized inventory table rendering.
+- Deferred search input to reduce fetch churn.
+- Response compression enabled on backend.
 
 ## Tradeoffs
-- Start with in-memory fallbacks while DB setup is pending.
-- Staged rollout of PWA features to avoid dev friction.
-
-## Future Improvements
-- Fine-grained audit logs.
-- Forecasting models for usage trends.
-- Multi-tenant org support.
+- AI is simulated locally (no external API keys wired yet).
+- Queue manager is in-memory (swap to Redis/BullMQ later).
 
 ## Setup
-- Create env files from the examples in apps/frontend and apps/backend.
-- Install dependencies in both apps.
-- Run frontend and backend dev servers.
+1) Create env files from the examples in apps/frontend and apps/backend.
+2) Install dependencies:
+	- `cd apps/frontend && npm install`
+	- `cd apps/backend && npm install`
+3) Run dev servers:
+	- Frontend: `npm run dev` (from apps/frontend)
+	- Backend: `npm run dev` (from apps/backend)
+
+## Environment Variables
+Frontend (apps/frontend/.env):
+- `NEXT_PUBLIC_API_URL=http://localhost:4000`
+- `NEXT_PUBLIC_WS_URL=http://localhost:4000`
+
+Backend (apps/backend/.env):
+- `PORT=4000`
+- `MONGODB_URI=...`
+- `JWT_SECRET=...`
+- `JWT_REFRESH_SECRET=...`
+- `GEMINI_API_KEY=...` (optional, not wired yet)
+- `GROK_API_KEY=...` (optional, not wired yet)
+
+## Future Improvements
+- Redis-backed queues and BullMQ.
+- Full PWA offline caching with IndexedDB.
+- Multi-tenant org and audit logs.
 

@@ -1,3 +1,5 @@
+import React from 'react';
+
 export type InventoryRow = {
   id: string;
   item: string;
@@ -42,7 +44,7 @@ type InventoryTableProps = {
   rows?: InventoryRow[];
 };
 
-export default function InventoryTable({ rows = sampleRows }: InventoryTableProps) {
+function InventoryTable({ rows = sampleRows }: InventoryTableProps) {
   return (
     <div className="glass p-6">
       <div className="flex items-center justify-between">
@@ -88,3 +90,5 @@ export default function InventoryTable({ rows = sampleRows }: InventoryTableProp
     </div>
   );
 }
+
+export default React.memo(InventoryTable);

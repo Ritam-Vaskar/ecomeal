@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import InventoryTable, { type InventoryRow } from '@/components/InventoryTable';
 import useOnline from '@/hooks/useOnline';
 import { safeFetch } from '@/lib/api';
 import { enqueueAction, flushQueue, getQueue } from '@/lib/offlineQueue';
+import { getSocket, disconnectSocket } from '@/lib/realtime';
 
 type InventoryItem = {
   id: string;
@@ -27,6 +28,8 @@ export default function InventoryPage() {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
+  const deferredSearch = useDeferredValue(search);
+  const deferredCategory = useDeferredValue(category);
   const [form, setForm] = useState({
     name: '',
     category: 'Produce',
@@ -56,8 +59,8 @@ export default function InventoryPage() {
         page: '1',
         limit: '50',
       });
-      if (search.trim()) params.set('search', search.trim());
-      if (category !== 'all') params.set('category', category);
+      if (deferredSearch.trim()) params.set('search', deferredSearch.trim());
+      if (deferredCategory !== 'all') params.set('category', deferredCategory);
 
       const data = await safeFetch<{ items: InventoryItem[] }>(`/inventory?${params}`);
       setItems(data.items);
@@ -102,6 +105,16 @@ export default function InventoryPage() {
   }, []);
 
   useEffect(() => {
+    const socket = getSocket();
+    const handler = () => loadInventory();
+    socket.on('inventory:update', handler);
+    return () => {
+      socket.off('inventory:update', handler);
+      disconnectSocket();
+    };
+  }, []);
+
+  useEffect(() => {
     syncQueue();
   }, [online]);
 
@@ -116,7 +129,7 @@ export default function InventoryPage() {
       loadInventory();
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [search, category]);
+  }, [deferredSearch, deferredCategory]);
 
   async function handleAddItem() {
     if (!form.name.trim() || !form.supplier.trim() || !form.expiryDate) {

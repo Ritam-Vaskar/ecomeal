@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { asyncHandler } from '../../shared/asyncHandler.js';
 import { createInventoryItem, listInventoryItems } from './repo.js';
 import { requireAuth, requireRole } from '../auth/middleware.js';
+import { getIo } from '../realtime/socket.js';
 
 const router = Router();
 
@@ -52,6 +53,8 @@ router.post(
       tags: [],
       ...data,
     });
+    const io = getIo();
+    io?.emit('inventory:update', { type: 'created', item });
     res.status(201).json({ item });
   }),
 );

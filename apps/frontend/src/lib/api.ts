@@ -36,30 +36,45 @@ function buildHeaders(init?: RequestInit) {
 export async function safeFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
+  const method = (init?.method ?? 'GET').toUpperCase();
+  const maxAttempts = method === 'GET' ? 2 : 1;
 
   try {
-    let res = await fetch(`${API_URL}${path}`, {
-      ...init,
-      signal: controller.signal,
-      headers: buildHeaders(init),
-    });
-
-    if (res.status === 401 && getRefreshToken()) {
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        res = await fetch(`${API_URL}${path}`, {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      try {
+        let res = await fetch(`${API_URL}${path}`, {
           ...init,
           signal: controller.signal,
           headers: buildHeaders(init),
         });
+
+        if (res.status === 401 && getRefreshToken()) {
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            res = await fetch(`${API_URL}${path}`, {
+              ...init,
+              signal: controller.signal,
+              headers: buildHeaders(init),
+            });
+          }
+        }
+
+        if (!res.ok) {
+          throw new Error(`Request failed: ${res.status}`);
+        }
+
+        return (await res.json()) as T;
+      } catch (error) {
+        lastError = error;
+        if (attempt < maxAttempts - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+          continue;
+        }
       }
     }
 
-    if (!res.ok) {
-      throw new Error(`Request failed: ${res.status}`);
-    }
-
-    return (await res.json()) as T;
+    throw lastError;
   } finally {
     clearTimeout(timeout);
   }
