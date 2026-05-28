@@ -1,5 +1,6 @@
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
+import OfflineBanner from '@/components/OfflineBanner';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,6 +9,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar />
         <div className="space-y-6">
           <Topbar />
+          <OfflineBanner />
           {children}
         </div>
       </div>

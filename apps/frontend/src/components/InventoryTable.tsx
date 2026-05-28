@@ -1,5 +1,16 @@
-const rows = [
+export type InventoryRow = {
+  id: string;
+  item: string;
+  category: string;
+  stock: string;
+  expiry: string;
+  supplier: string;
+  status: string;
+};
+
+const sampleRows: InventoryRow[] = [
   {
+    id: 'sample-1',
     item: 'Mushrooms',
     category: 'Produce',
     stock: '12 kg',
@@ -8,6 +19,7 @@ const rows = [
     status: 'Critical',
   },
   {
+    id: 'sample-2',
     item: 'Paneer',
     category: 'Dairy',
     stock: '6 kg',
@@ -16,6 +28,7 @@ const rows = [
     status: 'Warning',
   },
   {
+    id: 'sample-3',
     item: 'Spinach',
     category: 'Produce',
     stock: '18 kg',
@@ -25,7 +38,11 @@ const rows = [
   },
 ];
 
-export default function InventoryTable() {
+type InventoryTableProps = {
+  rows?: InventoryRow[];
+};
+
+export default function InventoryTable({ rows = sampleRows }: InventoryTableProps) {
   return (
     <div className="glass p-6">
       <div className="flex items-center justify-between">
@@ -47,16 +64,24 @@ export default function InventoryTable() {
             </tr>
           </thead>
           <tbody className="text-slate-200">
-            {rows.map((row) => (
-              <tr key={row.item} className="border-t border-ink-700/60">
-                <td className="py-4 font-medium">{row.item}</td>
-                <td>{row.category}</td>
-                <td>{row.stock}</td>
-                <td>{row.expiry}</td>
-                <td>{row.supplier}</td>
-                <td className="text-ember-400">{row.status}</td>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-6 text-center text-slate-400">
+                  No inventory yet.
+                </td>
               </tr>
-            ))}
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id} className="border-t border-ink-700/60">
+                  <td className="py-4 font-medium">{row.item}</td>
+                  <td>{row.category}</td>
+                  <td>{row.stock}</td>
+                  <td>{row.expiry}</td>
+                  <td>{row.supplier}</td>
+                  <td className="text-ember-400">{row.status}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
