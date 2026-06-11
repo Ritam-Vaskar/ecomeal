@@ -15,7 +15,7 @@ export type ListOptions = {
   sort?: string;
 };
 
-function parseSort(sort?: string) {
+function parseSort(sort?: string): Record<string, SortOrder> {
   const raw = sort || 'expiryDate';
   const direction: SortOrder = raw.startsWith('-') ? -1 : 1;
   const field = raw.replace('-', '');

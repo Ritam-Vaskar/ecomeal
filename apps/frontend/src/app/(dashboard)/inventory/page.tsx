@@ -92,8 +92,11 @@ export default function InventoryPage() {
     if (!('serviceWorker' in navigator)) return;
     navigator.serviceWorker.ready
       .then((registration) => {
-        if ('sync' in registration) {
-          return registration.sync.register('ecomeal-sync');
+        const syncManager = (registration as ServiceWorkerRegistration & {
+          sync?: { register: (tag: string) => Promise<void> };
+        }).sync;
+        if (syncManager?.register) {
+          return syncManager.register('ecomeal-sync');
         }
         return undefined;
       })

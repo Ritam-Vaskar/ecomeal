@@ -49,7 +49,7 @@ export async function comparePassword(password: string, passwordHash: string) {
 
 export async function findUserByEmail(email: string) {
   if (!isMongoConnected()) return null;
-  return UserModel.findOne({ email }).lean();
+  return UserModel.findOne({ email });
 }
 
 export async function createUser(input: {

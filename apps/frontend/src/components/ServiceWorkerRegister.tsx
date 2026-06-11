@@ -9,8 +9,11 @@ export default function ServiceWorkerRegister() {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        if ('sync' in registration) {
-          registration.sync.register('ecomeal-sync').catch(() => undefined);
+        const syncManager = (registration as ServiceWorkerRegistration & {
+          sync?: { register: (tag: string) => Promise<void> };
+        }).sync;
+        if (syncManager?.register) {
+          syncManager.register('ecomeal-sync').catch(() => undefined);
         }
       })
       .catch(() => undefined);
